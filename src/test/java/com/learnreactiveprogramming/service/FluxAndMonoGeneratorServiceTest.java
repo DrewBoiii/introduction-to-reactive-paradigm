@@ -148,4 +148,70 @@ public class FluxAndMonoGeneratorServiceTest {
                 .expectNext("default")
                 .verifyComplete();
     }
+
+    @Test
+    void explore_concatWith() {
+        Flux<String> stringFlux = service.explore_concatWith();
+
+        StepVerifier.create(stringFlux)
+                .expectNext("A", "B", "C", "D")
+                .verifyComplete();
+    }
+
+    @Test
+    void explore_concatWith_mono() {
+        Flux<String> stringFlux = service.explore_concatWith_mono();
+
+        StepVerifier.create(stringFlux)
+                .expectNext("A", "B")
+                .verifyComplete();
+    }
+
+    @Test
+    void explore_mergeWith() {
+        Flux<String> stringFlux = service.explore_mergeWith();
+
+        StepVerifier.create(stringFlux)
+                .expectNext("A", "C", "B", "D", "E")
+                .verifyComplete();
+    }
+
+    @Test
+    void explore_mergeWith_mono() {
+        Flux<String> stringFlux = service.explore_mergeWith_mono();
+
+        StepVerifier.create(stringFlux)
+                .expectNext("A", "B")
+                .verifyComplete();
+    }
+
+
+    @Test
+    void explore_mergeSequential() {
+        Flux<String> stringFlux = service.explore_mergeSequential();
+
+        StepVerifier.create(stringFlux)
+                .expectNext("A", "B", "C", "D", "E")
+                .verifyComplete();
+    }
+
+
+    @Test
+    void explore_zip() {
+        Flux<String> stringFlux = service.explore_zip();
+
+        StepVerifier.create(stringFlux)
+                .expectNext("AC", "BD")
+                .verifyComplete();
+    }
+
+    @Test
+    void exception_flux() {
+        Flux<String> exceptionFlux = service.exception_flux();
+
+        StepVerifier.create(exceptionFlux)
+                .expectNextCount(3)
+                .expectError()
+                .verify();
+    }
 }
