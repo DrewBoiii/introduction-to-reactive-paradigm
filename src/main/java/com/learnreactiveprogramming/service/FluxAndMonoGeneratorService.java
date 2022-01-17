@@ -100,6 +100,55 @@ public class FluxAndMonoGeneratorService {
                 .switchIfEmpty(Mono.just("default"));
     }
 
+    public Flux<String> explore_concat() {
+        Flux<String> ab = Flux.just("A", "B");
+        Flux<String> cd = Flux.just("C", "D");
+        return Flux.concat(ab, cd); // publishers are subscribed sequentially
+    }
+
+    public Flux<String> explore_concatWith_mono() {
+        Mono<String> aMono = Mono.just("A");
+        Mono<String> bMono = Mono.just("B");
+        return aMono.concatWith(bMono);
+    }
+
+    public Flux<String> explore_concatWith() {
+        Flux<String> ab = Flux.just("A", "B");
+        Flux<String> cd = Flux.just("C", "D");
+        return ab.concatWith(cd);
+    }
+
+    public Flux<String> explore_mergeWith() {
+        Flux<String> ab = Flux.just("A", "B").delayElements(Duration.ofMillis(100));
+        Flux<String> cde = Flux.just("C", "D", "E").delayElements(Duration.ofMillis(200));
+        return ab.mergeWith(cde).log(); // publishers are subscribed simultaneously
+    }
+
+    public Flux<String> explore_mergeWith_mono() {
+        Mono<String> aMono = Mono.just("A");
+        Mono<String> bMono = Mono.just("B");
+        return aMono.mergeWith(bMono).log(); // publishers are subscribed simultaneously
+    }
+
+    public Flux<String> explore_mergeSequential() {
+        Flux<String> ab = Flux.just("A", "B").delayElements(Duration.ofMillis(100));
+        Flux<String> cde = Flux.just("C", "D", "E").delayElements(Duration.ofMillis(200));
+        return Flux.mergeSequential(ab, cde).log(); // when the ordering matters
+    }
+
+    public Flux<String> explore_zip() {
+        Flux<String> ab = Flux.just("A", "B");
+        Flux<String> cde = Flux.just("C", "D", "E");
+        return Flux.zip(ab, cde, String::concat).log();
+    }
+
+    public Flux<String> exception_flux() {
+        return Flux.fromIterable(names())
+                .concatWith(Flux.error(new RuntimeException("Error occurred")))
+                .concatWith(Flux.just("Misha"))
+                .log();
+    }
+
     private Flux<String> split(String name) {
         String[] split = name.split("");
         return Flux.fromArray(split);
