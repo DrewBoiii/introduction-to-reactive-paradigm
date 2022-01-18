@@ -12,13 +12,6 @@ public class MovieReactiveService {
     private ReviewService reviewService;
     private MovieInfoService movieInfoService;
 
-//    public Flux<Movie> getAllMovies() {
-//        return Flux.fromIterable(movieInfoService.movieList().stream()
-//                .map(this::getMovie)
-//                .collect(Collectors.toSet()));
-//
-//    }
-
     public Flux<Movie> getAllMovies() {
         return movieInfoService.retrieveMoviesFlux()
                 .flatMap(this::getMovie)
