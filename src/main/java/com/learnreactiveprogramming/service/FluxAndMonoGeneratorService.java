@@ -149,6 +149,85 @@ public class FluxAndMonoGeneratorService {
                 .log();
     }
 
+    public Flux<String> exception_onErrorReturn() {
+        return Flux.fromIterable(names())
+                .concatWith(Flux.error(new IllegalStateException("Error occurred")))
+                .onErrorReturn("Misha") // stream will be terminated
+                .log();
+    }
+
+    public Flux<String> exception_onErrorResume(Exception e) {
+        Flux<String> recoveryFlux = Flux.just("Alena");
+        return Flux.fromIterable(names())
+                .concatWith(Flux.error(e))
+                .onErrorResume(throwable -> {
+                    log.error("Error occurred", throwable);
+                    if (throwable instanceof IllegalStateException) {
+                        return recoveryFlux;
+                    }
+                    return Flux.error(e);
+                }) // recover from error, return another stream, the previous one will be terminated
+                .log();
+    }
+
+    public Flux<String> exception_onErrorContinue() {
+        return Flux.fromIterable(names())
+                .map(name -> {
+                    if ("Chloe".equals(name)) {
+                        throw new IllegalStateException("Wrong name!!!!!!");
+                    }
+                    return name;
+                })
+                .concatWith(Flux.just("John"))
+                .onErrorContinue((throwable, o) -> log.error("Error occurred with object " + o, throwable)) // logging purposes, current stream won't be terminated
+                .log();
+    }
+
+    public Flux<String> exception_onErrorMap() {
+        return Flux.fromIterable(names())
+                .map(name -> {
+                    if ("Chloe".equals(name)) {
+                        throw new IllegalStateException("Wrong name!");
+                    }
+                    return name;
+                })
+                .onErrorMap(RuntimeException::new) // when you want to transform one exception to another, the other elements will be terminated
+                .log();
+    }
+
+    public Flux<String> exception_doOnError() {
+        return Flux.fromIterable(names())
+                .map(name -> {
+                    if ("Chloe".equals(name)) {
+                        throw new IllegalStateException("Wrong name!");
+                    }
+                    return name;
+                })
+                .doOnError(throwable -> log.error("Error occurred", throwable)) // doesn't modify the reactive stream, after catching an exception, the other elements will be terminated
+                .log();
+    }
+
+    public Mono<Object> exception_monoOnErrorReturn() {
+        return Mono.just("A")
+                .map(name -> {
+                    throw new RuntimeException();
+                })
+                .onErrorReturn("Recover value")
+                .log();
+    }
+
+    public Mono<String> task(String value) {
+        return Mono.just(value)
+                .map(v -> {
+                    if ("abc".equals(v)) {
+                        throw new RuntimeException();
+                    }
+                    return v;
+                })
+                .onErrorContinue((throwable, o) -> log.error("Error occurred with object - " + o, throwable))
+                .log();
+    }
+
     private Flux<String> split(String name) {
         String[] split = name.split("");
         return Flux.fromArray(split);

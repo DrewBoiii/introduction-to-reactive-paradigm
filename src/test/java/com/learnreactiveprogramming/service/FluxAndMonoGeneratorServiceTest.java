@@ -214,4 +214,93 @@ public class FluxAndMonoGeneratorServiceTest {
                 .expectError()
                 .verify();
     }
+
+    @Test
+    void exception_onErrorReturn() {
+        Flux<String> onErrorReturnFlux = service.exception_onErrorReturn();
+
+        StepVerifier.create(onErrorReturnFlux)
+                .expectNext("Alex", "Chloe", "Ben", "Misha")
+                .verifyComplete();
+    }
+
+    @Test
+    void exception_onErrorResume() {
+        IllegalStateException illegalStateException = new IllegalStateException("Illegal state exception");
+
+        Flux<String> onErrorResumeFlux = service.exception_onErrorResume(illegalStateException);
+
+        StepVerifier.create(onErrorResumeFlux)
+                .expectNext("Alex", "Chloe", "Ben", "Alena")
+                .verifyComplete();
+    }
+
+    @Test
+    void exception_onErrorResume2() {
+        IllegalArgumentException illegalArgumentException = new IllegalArgumentException("Illegal argument exception");
+
+        Flux<String> onErrorResumeFlux = service.exception_onErrorResume(illegalArgumentException);
+
+        StepVerifier.create(onErrorResumeFlux)
+                .expectNext("Alex", "Chloe", "Ben")
+                .expectError(IllegalArgumentException.class)
+                .verify();
+    }
+
+    @Test
+    void exception_onErrorContinue() {
+        Flux<String> onErrorContinueFlux = service.exception_onErrorContinue();
+
+        StepVerifier.create(onErrorContinueFlux)
+                .expectNext("Alex", "Ben", "John")
+                .verifyComplete();
+    }
+
+    @Test
+    void exception_onErrorMap() {
+        Flux<String> onErrorMapFlux = service.exception_onErrorMap();
+
+        StepVerifier.create(onErrorMapFlux)
+                .expectNext("Alex")
+                .expectError(RuntimeException.class)
+                .verify();
+    }
+
+    @Test
+    void exception_doOnError() {
+        Flux<String> doOnErrorFlux = service.exception_doOnError();
+
+        StepVerifier.create(doOnErrorFlux)
+                .expectNext("Alex")
+                .expectError()
+                .verify();
+    }
+
+    @Test
+    void exception_monoOnErrorReturn() {
+        Mono<Object> onErrorReturnMono = service.exception_monoOnErrorReturn();
+
+        StepVerifier.create(onErrorReturnMono)
+                .expectNext("Recover value")
+                .verifyComplete();
+    }
+
+
+    @Test
+    void returnEmptyMono_whenWrongValuePassed() {
+        Mono<String> stringMono = service.task("abc");
+
+        StepVerifier.create(stringMono)
+                .verifyComplete();
+    }
+
+    @Test
+    void returnNotEmptyMono_whenCorrectValuePassed() {
+        Mono<String> stringMono = service.task("reactor");
+
+        StepVerifier.create(stringMono)
+                .expectNext("reactor")
+                .verifyComplete();
+    }
+
 }
