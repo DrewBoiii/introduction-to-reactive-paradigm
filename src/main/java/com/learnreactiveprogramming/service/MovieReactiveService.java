@@ -46,6 +46,40 @@ public class MovieReactiveService {
                 .log();
     }
 
+    public Flux<Movie> getAllMoviesRepeat() {
+        return movieInfoService.retrieveMoviesFlux()
+                .flatMap(this::getMovie)
+                .doOnError(throwable -> log.error("Movie error", throwable))
+                .onErrorMap(throwable -> {
+                    if (throwable instanceof NetworkException) {
+                        throw new MovieException(throwable);
+                    }
+                    throw new ServiceException(throwable);
+                })
+                .retryWhen(Retry.backoff(5L, Duration.ofMillis(100L))
+                        .filter(throwable -> throwable instanceof MovieException)
+                        .onRetryExhaustedThrow((retryBackoffSpec, retrySignal) -> Exceptions.propagate(retrySignal.failure())))
+                .repeat()
+                .log();
+    }
+
+    public Flux<Movie> getAllMoviesRepeat(long numberOfRepeats) {
+        return movieInfoService.retrieveMoviesFlux()
+                .flatMap(this::getMovie)
+                .doOnError(throwable -> log.error("Movie error", throwable))
+                .onErrorMap(throwable -> {
+                    if (throwable instanceof NetworkException) {
+                        throw new MovieException(throwable);
+                    }
+                    throw new ServiceException(throwable);
+                })
+                .retryWhen(Retry.backoff(5L, Duration.ofMillis(100L))
+                        .filter(throwable -> throwable instanceof MovieException)
+                        .onRetryExhaustedThrow((retryBackoffSpec, retrySignal) -> Exceptions.propagate(retrySignal.failure())))
+                .repeat(numberOfRepeats)
+                .log();
+    }
+
     public Mono<Movie> getMovieById(Long id) {
         return movieInfoService.retrieveMovieInfoMonoUsingId(id)
                 .flatMap(this::getMovie)

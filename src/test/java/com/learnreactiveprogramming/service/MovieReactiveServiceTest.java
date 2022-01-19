@@ -110,4 +110,41 @@ class MovieReactiveServiceTest {
 
         verify(reviewService, times(6)).retrieveReviewsFlux(isA(Long.class));
     }
+
+    @Test
+    void getAllMoviesRepeat() {
+        when(movieInfoService.retrieveMoviesFlux())
+                .thenCallRealMethod();
+        when(reviewService.retrieveReviewsFlux(anyLong()))
+                .thenCallRealMethod();
+
+        Flux<Movie> allMovies = movieReactiveService.getAllMoviesRepeat(); // repeat indefinitely
+
+        StepVerifier.create(allMovies)
+                .expectNextCount(6)
+                .thenCancel()
+                .verify();
+
+        verify(movieInfoService, times(1)).retrieveMoviesFlux();
+        verify(reviewService, times(6)).retrieveReviewsFlux(isA(Long.class));
+    }
+
+    @Test
+    void getAllMoviesRepeatNumberOfTimes() {
+        long numberOfRepeats = 2L;
+
+        when(movieInfoService.retrieveMoviesFlux())
+                .thenCallRealMethod();
+        when(reviewService.retrieveReviewsFlux(anyLong()))
+                .thenCallRealMethod();
+
+        Flux<Movie> allMovies = movieReactiveService.getAllMoviesRepeat(numberOfRepeats); // repeat n times
+
+        StepVerifier.create(allMovies)
+                .expectNextCount(9)
+                .verifyComplete();
+
+        verify(movieInfoService, times(1)).retrieveMoviesFlux();
+        verify(reviewService, times(9)).retrieveReviewsFlux(isA(Long.class));
+    }
 }
