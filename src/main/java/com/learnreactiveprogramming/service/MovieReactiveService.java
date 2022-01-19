@@ -2,10 +2,13 @@ package com.learnreactiveprogramming.service;
 
 import com.learnreactiveprogramming.domain.Movie;
 import com.learnreactiveprogramming.domain.MovieInfo;
+import com.learnreactiveprogramming.exception.MovieException;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @AllArgsConstructor
 public class MovieReactiveService {
 
@@ -15,6 +18,8 @@ public class MovieReactiveService {
     public Flux<Movie> getAllMovies() {
         return movieInfoService.retrieveMoviesFlux()
                 .flatMap(this::getMovie)
+                .doOnError(throwable -> log.error("Movie error", throwable))
+                .onErrorMap(MovieException::new)
                 .log();
     }
 
@@ -22,15 +27,12 @@ public class MovieReactiveService {
         return movieInfoService.retrieveMovieInfoMonoUsingId(id)
                 .flatMap(this::getMovie)
                 .log();
-//        Mono<MovieInfo> movieInfoMono = movieInfoService.retrieveMovieInfoMonoUsingId(id);
-//        Mono<List<Review>> reviewFlux = reviewService.retrieveReviewsFlux(id).collectList();
-//        return movieInfoMono.zipWith(reviewFlux, Movie::new)
-//                .log();
     }
 
     private Mono<Movie> getMovie(MovieInfo movieInfo) {
         return reviewService.retrieveReviewsFlux(movieInfo.getMovieInfoId()).collectList()
-                .map(reviews -> new Movie(movieInfo, reviews));
+                .map(reviews -> new Movie(movieInfo, reviews))
+                .log();
     }
 
 }

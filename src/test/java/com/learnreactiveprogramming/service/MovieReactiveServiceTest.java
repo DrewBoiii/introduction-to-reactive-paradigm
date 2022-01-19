@@ -1,28 +1,38 @@
 package com.learnreactiveprogramming.service;
 
 import com.learnreactiveprogramming.domain.Movie;
+import com.learnreactiveprogramming.exception.MovieException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class MovieReactiveServiceTest {
 
-    //    @InjectMocks
-//    MovieReactiveService movieReactiveService;
-//
-//    @Mock
-//    ReviewService reviewService;
-//    @Mock
-//    MovieInfoService movieInfoService;
-    ReviewService reviewService = new ReviewService();
-    MovieInfoService movieInfoService = new MovieInfoService();
-    MovieReactiveService movieReactiveService = new MovieReactiveService(reviewService, movieInfoService);
+    @InjectMocks
+    MovieReactiveService movieReactiveService;
+
+    @Mock
+    ReviewService reviewService;
+    @Mock
+    MovieInfoService movieInfoService;
 
     @Test
     void getAllMovies() {
+        when(movieInfoService.retrieveMoviesFlux())
+                .thenCallRealMethod();
+        when(reviewService.retrieveReviewsFlux(anyLong()))
+                .thenCallRealMethod();
+
         Flux<Movie> allMovies = movieReactiveService.getAllMovies();
 
         StepVerifier.create(allMovies)
@@ -36,8 +46,27 @@ class MovieReactiveServiceTest {
     }
 
     @Test
+    void negativeTestGetAllMovies() {
+        when(movieInfoService.retrieveMoviesFlux())
+                .thenCallRealMethod();
+        when(reviewService.retrieveReviewsFlux(anyLong()))
+                .thenThrow(RuntimeException.class);
+
+        Flux<Movie> allMovies = movieReactiveService.getAllMovies();
+
+        StepVerifier.create(allMovies)
+                .expectError(MovieException.class)
+                .verify();
+    }
+
+    @Test
     void getMovieById() {
         long id = 100L;
+
+        when(movieInfoService.retrieveMovieInfoMonoUsingId(anyLong()))
+                .thenCallRealMethod();
+        when(reviewService.retrieveReviewsFlux(anyLong()))
+                .thenCallRealMethod();
 
         Mono<Movie> movieById = movieReactiveService.getMovieById(id);
 
