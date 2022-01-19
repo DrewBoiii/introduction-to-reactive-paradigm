@@ -20,6 +20,7 @@ public class MovieReactiveService {
                 .flatMap(this::getMovie)
                 .doOnError(throwable -> log.error("Movie error", throwable))
                 .onErrorMap(MovieException::new)
+                .retry(5L)
                 .log();
     }
 
