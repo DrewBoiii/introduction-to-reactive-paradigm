@@ -2,6 +2,8 @@ package com.learnreactiveprogramming.service;
 
 import com.learnreactiveprogramming.domain.Movie;
 import com.learnreactiveprogramming.exception.MovieException;
+import com.learnreactiveprogramming.exception.NetworkException;
+import com.learnreactiveprogramming.exception.ServiceException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -75,5 +77,37 @@ class MovieReactiveServiceTest {
         StepVerifier.create(movieById)
                 .assertNext(movie -> assertEquals(100L, movie.getMovie().getMovieInfoId()))
                 .verifyComplete();
+    }
+
+    @Test
+    void getAllMoviesRetryWhen1() {
+        when(movieInfoService.retrieveMoviesFlux())
+                .thenCallRealMethod();
+        when(reviewService.retrieveReviewsFlux(anyLong()))
+                .thenThrow(RuntimeException.class);
+
+        Flux<Movie> allMovies = movieReactiveService.getAllMoviesRetryWhen();
+
+        StepVerifier.create(allMovies)
+                .expectError(ServiceException.class)
+                .verify();
+
+        verify(reviewService, times(1)).retrieveReviewsFlux(isA(Long.class)); // retry only if we had movie exception, we specified it, that's why it called once
+    }
+
+    @Test
+    void getAllMoviesRetryWhen2() {
+        when(movieInfoService.retrieveMoviesFlux())
+                .thenCallRealMethod();
+        when(reviewService.retrieveReviewsFlux(anyLong()))
+                .thenThrow(NetworkException.class);
+
+        Flux<Movie> allMovies = movieReactiveService.getAllMoviesRetryWhen();
+
+        StepVerifier.create(allMovies)
+                .expectError(MovieException.class)
+                .verify();
+
+        verify(reviewService, times(6)).retrieveReviewsFlux(isA(Long.class));
     }
 }
