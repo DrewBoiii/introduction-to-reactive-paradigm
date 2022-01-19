@@ -13,7 +13,7 @@ import reactor.test.StepVerifier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class MovieReactiveServiceTest {
@@ -57,6 +57,8 @@ class MovieReactiveServiceTest {
         StepVerifier.create(allMovies)
                 .expectError(MovieException.class)
                 .verify();
+
+        verify(reviewService, times(6)).retrieveReviewsFlux(isA(Long.class));
     }
 
     @Test
