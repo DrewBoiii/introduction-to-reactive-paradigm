@@ -2,6 +2,8 @@ package com.learnreactiveprogramming.service;
 
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.publisher.ParallelFlux;
 import reactor.core.scheduler.Schedulers;
 
 import java.util.List;
@@ -57,6 +59,32 @@ public class FluxAndMonoSchedulersService {
         return namesFlux1.mergeWith(namesFlux2);
     }
 
+    public ParallelFlux<String> explore_parallel() {
+        System.out.println("Number of processors is " + Runtime.getRuntime().availableProcessors());
+
+        return Flux.fromIterable(namesList1)
+                .parallel()
+                .runOn(Schedulers.parallel())
+                .map(this::upperCaseWithDelay)
+                .log();
+    }
+
+
+    public Flux<String> explore_parallel_flatMap() {
+        return Flux.fromIterable(namesList1)
+                .flatMap(name -> Mono.just(name)
+                        .map(this::upperCaseWithDelay)
+                        .subscribeOn(Schedulers.parallel()))
+                .log();
+    }
+
+    public Flux<String> explore_parallel_flatMapSequential() {
+        return Flux.fromIterable(namesList1)
+                .flatMapSequential(name -> Mono.just(name)
+                        .map(this::upperCaseWithDelay)
+                        .subscribeOn(Schedulers.parallel()))
+                .log();
+    }
 
     private String upperCaseWithDelay(String name) {
         delay(1000);
