@@ -2,6 +2,7 @@ package com.learnreactiveprogramming.service;
 
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.ParallelFlux;
 import reactor.test.StepVerifier;
 
 class FluxAndMonoSchedulersServiceTest {
@@ -35,4 +36,32 @@ class FluxAndMonoSchedulersServiceTest {
                 .expectNextCount(6)
                 .verifyComplete();
     }
+
+    @Test
+    void explore_parallel() {
+        ParallelFlux<String> stringFlux = service.explore_parallel();
+
+        StepVerifier.create(stringFlux)
+                .expectNextCount(3)
+                .verifyComplete();
+    }
+
+    @Test
+    void explore_parallel_flatMap() {
+        Flux<String> stringFlux = service.explore_parallel_flatMap();
+
+        StepVerifier.create(stringFlux)
+                .expectNextCount(3)
+                .verifyComplete();
+    }
+
+    @Test
+    void explore_parallel_flatMapSequential() {
+        Flux<String> stringFlux = service.explore_parallel_flatMapSequential();
+
+        StepVerifier.create(stringFlux)
+                .expectNext("ALEX", "BEN", "CHLOE")
+                .verifyComplete();
+    }
+
 }

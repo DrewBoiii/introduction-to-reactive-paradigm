@@ -2,6 +2,7 @@ package com.learnreactiveprogramming.service;
 
 import com.learnreactiveprogramming.domain.Movie;
 import com.learnreactiveprogramming.domain.MovieInfo;
+import com.learnreactiveprogramming.domain.Revenue;
 import com.learnreactiveprogramming.exception.MovieException;
 import com.learnreactiveprogramming.exception.NetworkException;
 import com.learnreactiveprogramming.exception.ServiceException;
@@ -10,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import reactor.core.Exceptions;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import reactor.util.retry.Retry;
 
 import java.time.Duration;
@@ -20,6 +22,7 @@ public class MovieReactiveService {
 
     private ReviewService reviewService;
     private MovieInfoService movieInfoService;
+    private RevenueService revenueService;
 
     public Flux<Movie> getAllMovies() {
         return movieInfoService.retrieveMoviesFlux()
@@ -83,6 +86,18 @@ public class MovieReactiveService {
     public Mono<Movie> getMovieById(Long id) {
         return movieInfoService.retrieveMovieInfoMonoUsingId(id)
                 .flatMap(this::getMovie)
+                .log();
+    }
+
+    public Mono<Movie> getMovieByIdWithRevenue(Long id) {
+        Mono<Revenue> revenueMono = Mono.fromCallable(() -> revenueService.getRevenue(id))
+                .subscribeOn(Schedulers.boundedElastic()); // use this when making blocking calls
+        return movieInfoService.retrieveMovieInfoMonoUsingId(id)
+                .flatMap(this::getMovie)
+                .zipWith(revenueMono, ((movie, revenue) -> {
+                    movie.setRevenue(revenue);
+                    return movie;
+                }))
                 .log();
     }
 

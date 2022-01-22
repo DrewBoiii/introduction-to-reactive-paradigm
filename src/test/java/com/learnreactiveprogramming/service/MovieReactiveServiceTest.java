@@ -13,7 +13,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
@@ -27,6 +27,8 @@ class MovieReactiveServiceTest {
     ReviewService reviewService;
     @Mock
     MovieInfoService movieInfoService;
+    @Mock
+    RevenueService revenueService;
 
     @Test
     void getAllMovies() {
@@ -146,5 +148,28 @@ class MovieReactiveServiceTest {
 
         verify(movieInfoService, times(1)).retrieveMoviesFlux();
         verify(reviewService, times(9)).retrieveReviewsFlux(isA(Long.class));
+    }
+
+    @Test
+    void getMovieByIdWithRevenue() {
+        long id = 100L;
+
+        when(movieInfoService.retrieveMovieInfoMonoUsingId(anyLong()))
+                .thenCallRealMethod();
+        when(reviewService.retrieveReviewsFlux(anyLong()))
+                .thenCallRealMethod();
+        when(revenueService.getRevenue(anyLong()))
+                .thenCallRealMethod();
+
+        Mono<Movie> movieById = movieReactiveService.getMovieByIdWithRevenue(id);
+
+        StepVerifier.create(movieById)
+                .assertNext(movie -> {
+                    assertEquals(100L, movie.getMovie().getMovieInfoId());
+                    assertNotEquals(0, movie.getReviewList().size());
+                    assertNotNull(movie.getRevenue());
+                    assertEquals(1000000, movie.getRevenue().getBudget());
+                })
+                .verifyComplete();
     }
 }
