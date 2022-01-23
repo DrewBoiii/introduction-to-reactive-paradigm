@@ -317,4 +317,22 @@ public class FluxAndMonoGeneratorServiceTest {
                 .verifyComplete();
     }
 
+    @Test
+    void explore_generate() {
+        Flux<Integer> integerFlux = service.explore_generate();
+
+        StepVerifier.create(integerFlux)
+                .expectNextCount(9)
+                .verifyComplete();
+    }
+
+
+    @Test
+    void explore_create() {
+        Flux<String> stringFlux = service.explore_create();
+
+        StepVerifier.create(stringFlux)
+                .expectNext("alex", "chloe", "ben")
+                .verifyComplete();
+    }
 }

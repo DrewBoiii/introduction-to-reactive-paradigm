@@ -7,6 +7,7 @@ import reactor.core.publisher.Mono;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 public class FluxAndMonoGeneratorService {
@@ -169,6 +170,36 @@ public class FluxAndMonoGeneratorService {
                 }) // recover from error, return another stream, the previous one will be terminated
                 .log();
     }
+
+    public Flux<Integer> explore_generate() {
+        return Flux.generate(() -> 1, (state, sink) -> {
+                    if (state == 10) {
+                        sink.complete();
+                    }
+
+                    sink.next(state * state);
+
+                    return ++state;
+                })
+                .cast(Integer.class)
+                .log();
+    }
+
+    public Flux<String> explore_create() {
+        return Flux.create(sink -> CompletableFuture.supplyAsync(this::names)
+                        .thenAccept(names -> names.stream()
+                                .map(String::toLowerCase)
+                                .forEach(sink::next))
+                        .thenRun(sink::complete))
+                .cast(String.class)
+                .log();
+    }
+
+    public Mono<String> explore_create_mono() {
+        return Mono.create(sink -> sink.success("Value"));
+    }
+
+
 
     public Flux<String> exception_onErrorContinue() {
         return Flux.fromIterable(names())
