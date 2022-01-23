@@ -5,6 +5,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import reactor.test.scheduler.VirtualTimeScheduler;
+import reactor.tools.agent.ReactorDebugAgent;
 
 import java.time.Duration;
 import java.util.List;
@@ -260,6 +261,9 @@ public class FluxAndMonoGeneratorServiceTest {
 
     @Test
     void exception_onErrorMap() {
+        ReactorDebugAgent.init();
+        ReactorDebugAgent.processExistingClasses();
+
         Flux<String> onErrorMapFlux = service.exception_onErrorMap();
 
         StepVerifier.create(onErrorMapFlux)
