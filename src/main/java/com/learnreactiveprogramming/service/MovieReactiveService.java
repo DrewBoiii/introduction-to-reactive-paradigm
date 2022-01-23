@@ -24,6 +24,15 @@ public class MovieReactiveService {
     private MovieInfoService movieInfoService;
     private RevenueService revenueService;
 
+    public Flux<Movie> getMoviesUsingRest() {
+        return movieInfoService.getAllMovieInfo_restClient()
+                .flatMap(this::buildMovie)
+                .doOnError(throwable -> log.error("Movie error", throwable))
+                .onErrorMap(MovieException::new)
+                .retry(5L)
+                .log();
+    }
+
     public Flux<Movie> getAllMovies() {
         return movieInfoService.retrieveMoviesFlux()
                 .flatMap(this::getMovie)
@@ -89,6 +98,12 @@ public class MovieReactiveService {
                 .log();
     }
 
+    public Mono<Movie> getMovieByIdUsingRest(Long id) {
+        return movieInfoService.getMovieInfo(id)
+                .flatMap(this::buildMovie)
+                .log();
+    }
+
     public Mono<Movie> getMovieByIdWithRevenue(Long id) {
         Mono<Revenue> revenueMono = Mono.fromCallable(() -> revenueService.getRevenue(id))
                 .subscribeOn(Schedulers.boundedElastic()); // use this when making blocking calls
@@ -102,7 +117,15 @@ public class MovieReactiveService {
     }
 
     private Mono<Movie> getMovie(MovieInfo movieInfo) {
-        return reviewService.retrieveReviewsFlux(movieInfo.getMovieInfoId()).collectList()
+        return reviewService.retrieveReviewsFlux(movieInfo.getMovieInfoId())
+                .collectList()
+                .map(reviews -> new Movie(movieInfo, reviews))
+                .log();
+    }
+
+    private Mono<Movie> buildMovie(MovieInfo movieInfo) {
+        return reviewService.getReviews(movieInfo.getMovieInfoId())
+                .collectList()
                 .map(reviews -> new Movie(movieInfo, reviews))
                 .log();
     }
